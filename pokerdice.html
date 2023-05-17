@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href="bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="all.css">
+    <script src="unpkg/web3.min.js"></script>
+    <script src="bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="jquery/dist/jquery.min.js"></script>
+    <script src="notify/notify.js"></script>
+    <!--
+  <script type="text/javascript" src="https://unpkg.com/web3modal@1.9.11/dist/index.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/evm-chains@0.2.0/dist/umd/index.min.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/@walletconnect/web3-provider@1.2.1/dist/umd/index.min.js"></script>
+  -->
+
+    <script type="text/javascript" src="unpkg/web3modal.js"></script>
+    <!-- 1.9.11 -->
+    <script type="text/javascript" src="unpkg/evm-chains.js"></script>
+    <!-- 0.2.0 -->
+    <script type="text/javascript" src="unpkg/walletconnect.js"></script>
+    <!-- 1.8.0 -->
+    <script src="common.js"></script>
+    <script src="newpokerdice.js"></script>
+    <title>On-chain dice betting games on multiple blockchains</title>
+    <meta name="description" content="On-chain blockchain gambling game. No deposit required, play directly from your wallet." />
+    <meta name=”robots” content="index, follow">
+    <link rel="icon" type="image/x-icon" href="/images/dice-5.png">
+    <style>
+        * {
+            touch-action: manipulation;
+        }
+
+        .container-scene-size {
+            width: 640px;
+            border-style: none;
+        }
+
+        .scroll-class {
+            height: 700px;
+            overflow-y: scroll;
+        }
+
+        .dice-class {
+            image-rendering: auto;
+            width: auto;
+            height: 150;
+            aspect-ratio: 1 / 1;
+        }
+
+        #betsize {
+            font-size: 40px;
+        }
+
+        .modal-custom {
+            width: 2000px;
+            max-width: 90%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary p-4">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                <ul class="navbar-nav">
+                    <li class="nav-item" id="pokerlink">
+                        <a class="nav-link active" href="pokerdice.html"><span style="font-size:40px;">PokerDice</span></a>
+                    </li>
+                    <li class="nav-item" id="twolink">
+                        <a class="nav-link" href="twodices.html" aria-current="page"><span style="font-size:40px;">TwoDices</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://wolftoken.ethgames.fun"><span style="font-size:40px;">WolfToken</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <button type="button" class="btn btn-primary" id="rules" data-bs-toggle="modal" data-bs-target="#staticBackdrop"><span style="font-size:40px;">Rules</span></button>
+                    </li>
+                </ul>
+            </div>
+            <!-- <div style="display: flex; justify-content: flex-end"> -->
+            <span id="saddress" class="rounded-9 badge 
+                     bg-info text-dark mt-3" style="font-size:20px; margin:10px; display: none;">
+            
+        </span>
+            <img id="logo" src="" width="83px;" style="margin:10px; display: none;" />
+            <table>
+                <tr>
+                    <td>
+                        <div class="justify-content-end">
+                            <button type="button" style="width:100%;" class="btn btn-success rounded-pill btn-block" id="btn-connect"><span style="font-size:40px; width:100%;">Connect</span></button>
+                        </div>
+                        <div class="justify-content-end">
+                            <button style="display: none; width:100%;" type="button" class="btn btn-warning rounded-pill btn-block" id="btn-disconnect"><span style="font-size:40px;">Disconnect</span></button>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="separator" style="height:30px;" />
+                <tr>
+                    <td>
+                        <div class="justify-content-end"><span style="font-size:40px; padding: 20px;">
+            <input type="checkbox" input class="form-check-input" id="accpt" name="accpt">
+            <label><a id="accptTOS"><h4 class="text-uppercase fw-bold text-white">Terms of service</h4></a></label>
+        </span></div>
+                </tr>
+                </td>
+            </table>
+            <!--</div>-->
+        </div>
+    </nav>
+    </br>
+
+
+
+    <div class="modal modal-lg fade" id="unsupportedModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="unsupportedModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-custom">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticTosLabel"><span style="font-size:40px;">Unfortunately we don't support <div id="unsup"></div></span></h5>
+                </div>
+                <div class="modal-body">
+                    <span style="font-size:40px;">Please connect to one of the supported blockchains:</span>
+                    <span style="font-size:40px;">
+      <table id="supported">
+      <tbody></tbody>
+      </table>
+      </span>
+                </div>
+                <!--modal-body -->
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><span style="font-size:40px;">OK</span></button>
+                </div>
+            </div>
+            <!-- modal-content -->
+        </div>
+        <!-- modal-dialog -->
+    </div>
+    <!-- modal -->
+
+    <div class="modal fade" id="staticTos" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticTosLabel" aria-hidden="true">
+        <div class="modal-dialog modal-custom">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticTosLabel"><span style="font-size:40px;">Terms of Service</span></h5>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        <h6> 1. BASIC TERMS:</h6>
+                        This site is provided by ethgames.fun and is subject to all of the following Terms of Service. This TOS may be updated from time to time with or without notice, according to our own discretion. Please review these TOS regularly for any potential changes.
+                        Once posted, all updated or new guideline or terms are immediately effective and incorporated into the full body of these TOS.
+                    </p>
+                    <p>
+                        <h6>2. SERVICES AND CONTENT</h6>
+                        Any and all content and services provided to users by ethgames.fun including but not limited to website reviews, contests, forums, polls, and other features and services are done so fully at our discretion. They may be updated, deleted, or otherwise modified
+                        at any time with or without notice. Unless otherwise stated, all photographs, text, images, statistics, logos, other media and intellectual property shared on social media will be subject to these TOS.
+
+                    </p>
+                    <p>
+                        You also understand that the website and everything provided herein is offered on an 'AS IS' basis and that ethgames.fun assumes no responsibility in conjunction with your use of any website service, feature or content. All of this is offered strictly
+                        for your non-commercial entertainment and enjoyment. Anything downloaded may be done so only to a single personal computing or mobile device, as appropriate. None of the content or services may be distributed, modified, republished,
+                        or publicly displayed without the expressed written consent of ethgames.fun. Furthermore, we reserve the right to withhold such permission at our discretion.
+
+                    </p>
+                    <p>
+                        <h6>3. DISCLAIMER OF WARRANTIES</h6>
+                        Your continued use of the site means that you expressly understand and agree to all of the following in their entirety:
+
+                    </p>
+                    <p>
+                        a. Any use of this website, services and content is at your sole risk. Everything is provided on an 'AS IS' and available basis. ethgames.fun expressly disclaims all warranties of any type. This includes any expressed and implied warranties such as implied
+                        warranties of merchantability, fitness for a particular purpose and non-infringement.
+
+                    </p>
+                    <p>
+                        b. ethgames.fun does not make any warranties or guarantees that a) the website, services or content will be what you are looking for, b) the website, services or content will be uninterrupted, timely, secure or even error-free, c) the results obtained
+                        from anything on the site, any service or other content will be accurate or reliable, d) the quality obtained through the site for content, services, products, information or other services will meet your expectations in any way,
+                        and e) any errors in the software will be corrected or attempted to be corrected.
+
+                    </p>
+                    <p>
+                        c. Any of the material downloaded or otherwise obtained through the website or services is done completely and solely at your own discretion and risk. Additionally, you agree to be solely responsible for any damage done to your computer system or loss
+                        of data that may result from any such activity.
+
+                    </p>
+                    <p>
+                        d.Nothing obtained from the website, services or content shall create any type of warranty or guarantee unless expressly stated in the TOS.
+
+                    </p>
+                    <p>
+                        <h6>4. LIMITATION OF LIABILITY</h6>
+                        You understand and agree that ethgames.fun will not be responsible or liable for any direct, indirect, incidental, special, consequential, or exemplary damages. This includes damages for loss of profits, goodwill, use, data or any other intangible losses
+                        (even if we have been advised of these possibilities) resulting from: the use or inability to use or access the website; the cost of obtaining any substitution goods and services resulting from anything obtained, downloaded or
+                        purchased on the website; unauthorized access to or alteration of your transmissions or data; statements or conduct of any third party on the website; or any other material relating to the website, services or content.
+
+                    </p>
+                    <p>
+                        <h6>5. ACCESS TO SERVICES</h6>
+                        To properly access and use this site and any services associated with the ethgames.fun site, you must first obtain your own internet access and pay any service fees associated with this access. You are solely responsible for obtaining and paying for any
+                        needed equipment including (but not limited to) computer or mobile access device, modem, etc... Additionally, you must be at least 18 years and legal age in your jurisdiction of residency to receive any prizes at ethgames.fun.
+                        Anyone under the age of 18 is not permitted to use or gain access to any of our services or content.
+
+                    </p>
+                    <p>
+                        <h6>6. MEMBER ACCESS AND SECURITY</h6>
+                        Upon Accepting TOS, you have to connect site and wallet and are solely responsible for maintaining the secrecy of your wallet. Any and all activities occurring under your wallet are your full responsibility. ethgames.fun cannot and will not be liable
+                        for any loss or damage arising from your noncompliance.
+
+                    </p>
+                    <p>
+                        <h6>7. INDEMNITY</h6>
+                        Your account address to indemnify, defend and hold harmless on ethgames.fun and on blockchain.
+
+                    </p>
+                    <p>
+                        <h6>8. MODIFICATIONS TO WEBSITE, INCLUDING THE SERVICES</h6>
+                        ethgames.fun reserves the right at any time to modify or discontinue, temporarily or permanently, any aspect of (or the entire) website or services, with or without notice.
+
+                    </p>
+                    <p>
+                        <h6>9. ETHGAMES.FUN ADVERTISERS AND VENDORS</h6>
+                        Your dealing with advertisers and vendors found on or through our website, including any payment and delivery of related goods and/or services are solely between you and the advertiser or vendor. You also agree that ethgames.fun will not be responsible
+                        or liable for any potential or consequential loss incurred as the result of such dealings. All of your dealings with vendors and advertisings shall be at your sole risk.
+
+                    </p>
+                    <p>
+                        <h6>10. LINKING</h6>
+                        Our website may also offer from time to time links to other websites and resources. Since we have no direct or indirect control over any third party resources, you acknowledge and agree that ethgames.fun will not be responsible, liable, directly or indirectly,
+                        for any loss or damage caused by or in connection with the use of or reliance on any such content, goods, or services found through any site or resource.
+
+                    </p>
+                    <p>
+                        <h6>11. REPRODUCTION RIGHTS</h6>
+                        Nothing on the ethgames.fun site may be reproduced without the prior written consent of the site. Except as expressly authorized by the site, you agree not to reproduce, republish, upload, post, transmit, distribute, copy, publicly display or otherwise
+                        use any content or derivative works based on the website, services and content or the software, in whole or in part.
+
+                    </p>
+                    <p>
+                        <h6>12. NOTICE</h6>
+                        Our notices to you may be made either by email or social media. These notices may include advisement of changes to the TOS.
+
+                    </p>
+                    <p>
+                        <h6>13. ENTIRE AGREEMENT</h6>
+                        This TOS constitutes the entire agreement between you and the ethgames.fun website. It supersedes another prior version of the TOS and governs your entire use of the website, service, and access to content. The failure of the website to exercise or enforce
+                        any right or provision of the TOS shall not be construed to mean a waiver of any provision or right. If any provision or term of this TOS is deemed to be invalid or unenforceable by any court of competent jurisdiction, all of the
+                        other provisions of the TOS remain in full force and effect.
+
+                    </p>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><span style="font-size:40px;">Accept</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-custom">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel"><span style="font-size:40px;">Pokerdice rules</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <span style="font-size:40px;">
+          No deposit required, play directly from your wallet. Select a bet and then roll dices, you can win up to x<div style="display: inline" id="maxratio9">50</div> than your bet. </br>
+          Reward ratios:
+          <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Result</th>
+                    <th>Reward</th>
+                </tr>
+            <tbody>
+                <tr>
+                    <td><div id="ratio0_name">TwoPairs</div></td>
+                    <td>x<div style="display: inline" id="ratio0_value">1.1</div></td>
+                </tr>
+                <tr>
+                    <td><div id="ratio1_name">Three of a knd</div></td>
+                    <td>x<div style="display: inline" id="ratio1_value">1.5</div></td>
+                </tr>
+                <tr>
+                    <td><div id="ratio2_name">Full house</div></td>
+                    <td>x<div style="display: inline" id="ratio2_value">3</div></td>
+                </tr>
+                <tr>
+                    <td><div id="ratio3_name">Four of a kind</div></td>
+                    <td>x<div style="display: inline" id="ratio3_value">4</div></td>
+                </tr>
+                <tr>
+                    <td><div id="ratio4_name">Low straight</div></td>
+                    <td>x<div style="display: inline" id="ratio4_value">5</div></td>
+                </tr>
+                <tr>
+                    <td><div id="ratio5_name">High straight</div></td>
+                    <td>x<div style="display: inline" id="ratio5_value">6</div></td>
+                </tr>
+                <tr>
+                    <td><div id="ratio6_name">Five of a kind</div></td>
+                    <td>x<div style="display: inline" id="ratio6_value">20</div></td>
+                </tr>
+                <tr>
+                    <td><div id="ratio7_name">Flush</div></td>
+                    <td>x<div style="display: inline" id="ratio7_value">35</div></td>
+                </tr>
+                <tr>
+                    <td><div id="ratio8_name">Royal flush</div></td>
+                    <td>x<div style="display: inline" id="ratio8_value">50</div></td>
+                </tr>
+                
+            </tbody>
+            </thead>
+          </table>
+        </span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><span style="font-size:40px;">Close</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="container-lg shadow p-3 mb-3 bg-body rounded align-items-center" id="scene">
+
+        <div class="row justify-content-sm-center">
+            <div class="col-1 dice-class"><img src="images/staticdice.jpg" width="150" /></div>
+            <div class="col-1 dice-class"><img src="images/staticdice.jpg" width="150" /></div>
+            <div class="col-1 dice-class"><img src="images/staticdice.jpg" width="150" /></div>
+            <div class="col-1 dice-class"><img src="images/staticdice.jpg" width="150" /></div>
+            <div class="col-1 dice-class"><img src="images/staticdice.jpg" width="150" /></div>
+        </div>
+
+
+    </div>
+    <div class="container-lg shadow p-3 mb-3 bg-body rounded">
+        <div class="row">
+            <div class="col">
+                <div class="input-group mb-2">
+                    <button type="button" class="btn btn-outline-info" id="minbet"><span style="font-size:40px;">min</span></button>
+                    <button type="button" class="btn btn-outline-info" id="minus"><span style="font-size:40px;">&nbsp;&nbsp;-&nbsp;&nbsp;</span></button>
+
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><span style="font-size:40px;">Bet</span></span>
+                    </div>
+
+                    <input type="text" class="form-control" type="number" step="0.001" readonly="readonly" id="betsize">
+
+                    <div class="input-group-append">
+                        <span class="input-group-text"><span style="font-size:40px;"><div id="currency">&nbsp;&nbsp;&nbsp; </div></span></span>
+                    </div>
+
+                    <button type="button" class="btn btn-outline-info" id="plus"><span style="font-size:40px;">&nbsp;&nbsp;+&nbsp;&nbsp;</span></button>
+                    <button type="button" class="btn btn-outline-info" id="maxbet"><span style="font-size:40px;">max</span></button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col d-grid gap-1">
+                <button type="button" class="btn btn-info roll-button btn-block p-4"><span style="font-size:40px;">Roll</span></button>
+                <div id="status"><span style="font-size:40px;"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-lg shadow p-3 mb-3 bg-body rounded">
+        <div class="row">
+            <div class="col">
+                <h1>Recent rewards</h1>
+            </div>
+            <div class="col">
+                <div class="form-check">
+                    <span style="font-size:32px;">
+                        <input class="form-check-input" type="checkbox" value="" id="onlyme">
+                        <label class="form-check-label" for="flexCheckDefault">
+                            Only me
+                        </label>
+                    </span>
+                </div>
+            </div>
+            <div class="col">
+                <h2>
+                    <div id="balance"></div>
+                </h2>
+            </div>
+        </div>
+        <div class="row scroll-class">
+            <div>
+                <table class="table table-hover" id="history">
+
+                    <thead>
+                        <tr>
+                            <th><span style="font-size:32px;">Player</span></th>
+                            <th><span style="font-size:32px;">Transaction</span></th>
+                            <th><span style="font-size:32px;">Bet</span></th>
+                            <th><span style="font-size:32px;">Result</span></th>
+                            <th><span style="font-size:32px;">Reward</span></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!-- Remove the container if you want to extend the Footer to full width. -->
+    <div class="container-lg my-5 shadow p-3 mb-3 bg-body rounded align-items-center ">
+
+        <!-- Footer -->
+        <footer class="text-center text-lg-start text-white" style="background-color: #1c2331">
+            <!-- Section: Social media -->
+            <section class="d-flex justify-content-between p-4" style="background-color: #6351ce">
+                <!-- Left -->
+                <div class="me-5">
+                    <span>Get connected with us:</span>
+                </div>
+                <!-- Left -->
+
+                <!-- Right -->
+                <div>
+
+                    <a href="mailto:ethgames2022@gmail.com" class="text-white me-4" target="_blank">
+          <i class="fas fa-envelope"></i>
+        </a>
+                    <a href="https://twitter.com/ethgames2022" class="text-white me-4" target="_blank">
+          <i class="fab fa-twitter"></i>
+        </a>
+                    <a href="https://www.instagram.com/ethgames.fun/" class="text-white me-4" target="_blank">
+          <i class="fab fa-instagram"></i>
+        </a>
+                    <a href="https://telegram.me/ethgamesgroup" class="text-white me-4" target="_blank">
+          <i class="fab fa-telegram"></i>
+        </a>
+                </div>
+                <!-- Right -->
+            </section>
+            <!-- Section: Social media -->
+
+            <!-- Section: Links  -->
+            <section class="">
+                <div class="container text-center text-md-start mt-5">
+                    <!-- Grid row -->
+                    <div class="row mt-3">
+                        <!-- Grid column -->
+                        <div class="col-md-3 col-lg-4 col-xl-3 mx-auto mb-4">
+                            <!-- Content -->
+                            <h6 class="text-uppercase fw-bold">www.ethgames.fun</h6>
+                            <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px" />
+                            <p>
+                                With Blockchain rise in popularity, on-chain casino games have continued increasing in numbers online. Dice games are known as one of the purest forms of crypto casino games available on the internet, with straightforward rules that are easy to learn
+                                and play.
+                            </p>
+                        </div>
+                        <!-- Grid column -->
+
+                        <!-- Grid column -->
+                        <div class="col-md-2 col-lg-2 col-xl-2 mx-auto mb-4">
+                            <!-- Links -->
+                            <h6 class="text-uppercase fw-bold">Games</h6>
+                            <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px" />
+                            <p>
+                                <a href="pokerdice.html" class="text-white">PokerDice</a>
+                            </p>
+                            <p>
+                                <a href="twodices.html" class="text-white">TwoDices</a>
+                            </p>
+                        </div>
+                        <!-- Grid column -->
+
+                        <!-- Grid column -->
+                        <div class="col-md-3 col-lg-2 col-xl-2 mx-auto mb-4">
+                            <!-- Links -->
+                            <h6 class="text-uppercase fw-bold">Useful links</h6>
+                            <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px" />
+                            <p>
+                                <a href="https://metamask.io/" class="text-white" target="_blank">MetaMask</a>
+                            </p>
+                            <p>
+                                <a href="https://viewblock.io/thundercore" class="text-white" target="_blank">www.viewblock.io/thundercore</a>
+                            </p>
+                        </div>
+                        <!-- Grid column -->
+
+                        <!-- Grid column -->
+                        <div class="col-md-4 col-lg-3 col-xl-3 mx-auto mb-md-0 mb-4">
+                            <!-- Links -->
+                            <h6 class="text-uppercase fw-bold">Smart Contracts</h6>
+                            <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px" />
+                            <p><i class="fas fa-pencil-alt mr-3"></i><a href="https://viewblock.io/thundercore/address/0x7bac7e17aebc611204c4eed155a00d5793ebf5f4" class="text-white" target="_blank"> PokerDice</a></p>
+                            <p><i class="fas fa-pencil-alt mr-3"></i><a href="https://viewblock.io/thundercore/address/0x5938680e4ed4abe2e3cae79a07e76c98c9d4ce7f" class="text-white" target="_blank"> TwoDices</a></p>
+                        </div>
+                        <!-- Grid column -->
+                    </div>
+                    <!-- Grid row -->
+                </div>
+            </section>
+            <!-- Section: Links  -->
+
+            <!-- Copyright -->
+            <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2)">2022 Copyright:
+                <a class="text-white" href="https://www.ethgames.fun/">www.ethgames.fun</a
+        >
+    </div>
+    <!-- Copyright -->
+  </footer>
+  <!-- Footer -->
+
+</div>
+<!-- End of .container -->
+</body>
+</html>
